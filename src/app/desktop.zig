@@ -77,3 +77,53 @@ pub fn sanitizeExec(exec_cmd: []const u8, allocator: std.mem.Allocator) ![]const
 
     return allocator.dupe(u8, result.items);
 }
+
+test "sanitizeExec removes percent codes" {
+    const input = "firefox %u %F";
+    const expected = "firefox ";
+
+    const result = try sanitizeExec(input, std.testing.allocator);
+    defer std.testing.allocator.free(result);
+
+    try std.testing.expectEqualStrings(expected, result);
+}
+
+test "sanitizeExec handles multiple percent codes" {
+    const input = "app %f %u %d";
+    const expected = "app ";
+
+    const result = try sanitizeExec(input, std.testing.allocator);
+    defer std.testing.allocator.free(result);
+
+    try std.testing.expectEqualStrings(expected, result);
+}
+
+test "sanitizeExec keeps regular percent signs" {
+    const input = "app %test%";
+    const expected = "app %test%";
+
+    const result = try sanitizeExec(input, std.testing.allocator);
+    defer std.testing.allocator.free(result);
+
+    try std.testing.expectEqualStrings(expected, result);
+}
+
+test "sanitizeExec handles empty input" {
+    const input = "";
+    const expected = "";
+
+    const result = try sanitizeExec(input, std.testing.allocator);
+    defer std.testing.allocator.free(result);
+
+    try std.testing.expectEqualStrings(expected, result);
+}
+
+test "sanitizeExec keeps normal characters" {
+    const input = "normal-command --arg value";
+    const expected = "normal-command --arg value";
+
+    const result = try sanitizeExec(input, std.testing.allocator);
+    defer std.testing.allocator.free(result);
+
+    try std.testing.expectEqualStrings(expected, result);
+}

@@ -63,3 +63,121 @@ pub const State = struct {
         self.scroll_offset = 0;
     }
 };
+
+test "filterApps with empty search returns all apps" {
+    var state = State.init(std.testing.allocator);
+    defer state.deinit();
+
+    const test_apps = [_]desktop.AppEntry{
+        .{ .name = "App1", .exec = "app1" },
+        .{ .name = "App2", .exec = "app2" },
+        .{ .name = "App3", .exec = "app3" },
+    };
+
+    for (test_apps) |app| {
+        try state.apps.append(std.testing.allocator, app);
+    }
+
+    try state.initFilteredIndices();
+
+    state.filterApps();
+
+    try std.testing.expectEqual(3, state.filtered_count);
+    try std.testing.expectEqual(3, state.filtered_indices.items.len);
+}
+
+test "filterApps filters by name case insensitive" {
+    var state = State.init(std.testing.allocator);
+    defer state.deinit();
+
+    const test_apps = [_]desktop.AppEntry{
+        .{ .name = "Firefox", .exec = "firefox" },
+        .{ .name = "Chromium", .exec = "chromium" },
+        .{ .name = "Terminal", .exec = "terminal" },
+    };
+
+    for (test_apps) |app| {
+        try state.apps.append(std.testing.allocator, app);
+    }
+
+    try state.initFilteredIndices();
+
+    @memcpy(state.text_buffer[0..4], "fire");
+    state.text_len = 4;
+
+    state.filterApps();
+
+    try std.testing.expectEqual(1, state.filtered_count);
+    try std.testing.expectEqual(0, state.filtered_indices.items[0]);
+}
+
+test "filterApps resets selection if no match" {
+    var state = State.init(std.testing.allocator);
+    defer state.deinit();
+
+    const test_apps = [_]desktop.AppEntry{
+        .{ .name = "App1", .exec = "app1" },
+        .{ .name = "App2", .exec = "app2" },
+    };
+
+    for (test_apps) |app| {
+        try state.apps.append(std.testing.allocator, app);
+    }
+
+    try state.initFilteredIndices();
+    state.selected_index = 1;
+
+    @memcpy(state.text_buffer[0..3], "xyz");
+    state.text_len = 3;
+
+    state.filterApps();
+
+    try std.testing.expectEqual(0, state.filtered_count);
+    try std.testing.expectEqual(0, state.selected_index);
+}
+
+test "filterApps adjusts selection if out of bounds" {
+    var state = State.init(std.testing.allocator);
+    defer state.deinit();
+
+    const test_apps = [_]desktop.AppEntry{
+        .{ .name = "App1", .exec = "app1" },
+        .{ .name = "App2", .exec = "app2" },
+        .{ .name = "App3", .exec = "app3" },
+    };
+
+    for (test_apps) |app| {
+        try state.apps.append(std.testing.allocator, app);
+    }
+
+    try state.initFilteredIndices();
+    state.selected_index = 2;
+
+    @memcpy(state.text_buffer[0..4], "App1");
+    state.text_len = 4;
+
+    state.filterApps();
+
+    try std.testing.expectEqual(1, state.filtered_count);
+    try std.testing.expectEqual(0, state.selected_index);
+}
+
+test "initFilteredIndices populates all indices" {
+    var state = State.init(std.testing.allocator);
+    defer state.deinit();
+
+    const test_apps = [_]desktop.AppEntry{
+        .{ .name = "App1", .exec = "app1" },
+        .{ .name = "App2", .exec = "app2" },
+    };
+
+    for (test_apps) |app| {
+        try state.apps.append(std.testing.allocator, app);
+    }
+
+    try state.initFilteredIndices();
+
+    try std.testing.expectEqual(2, state.filtered_indices.items.len);
+    try std.testing.expectEqual(0, state.filtered_indices.items[0]);
+    try std.testing.expectEqual(1, state.filtered_indices.items[1]);
+}
