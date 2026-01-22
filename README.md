@@ -13,7 +13,9 @@ A fast, lightweight application launcher written in Zig for X11 desktop environm
 
 ## Demo
 
-https://github.com/user-attachments/assets/erlauncher_demo.mp4
+https://github.com/user-attachments/assets/25612b97-b950-4024-9e99-18c9223b9484
+
+
 
 ## Features
 
