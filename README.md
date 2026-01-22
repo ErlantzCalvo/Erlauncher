@@ -128,8 +128,8 @@ ui.max_visible_items: 10
 // Font
 font.name: "DejaVu Sans-14"
 
-// Colors
-colors.selection: #7588F0
+// Colors (0-255 format, auto-converted to X11 16-bit)
+colors.selection: #7588F0 (R:117, G:136, B:240)
 ```
 
 ## Architecture

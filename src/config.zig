@@ -20,8 +20,7 @@ pub const layout = struct {
     pub const text_offset_y: i32 = 5;
     pub const selection_padding_top: i32 = 2;
     pub const selection_padding_bottom: i32 = 2;
-    pub const window_height_proximity_factor: i32 = 100;
-    pub const window_height_extra_offset: i32 = 400;
+    pub const window_vertical_offset: i32 = 300;
 };
 
 pub const font = struct {
@@ -29,15 +28,20 @@ pub const font = struct {
 };
 
 pub const colors = struct {
-    pub const selection_red: u16 = 30056;
-    pub const selection_green: u16 = 34152;
-    pub const selection_blue: u16 = 61440;
-    pub const window_red: u16 = 65535;
-    pub const window_green: u16 = 65535;
-    pub const window_blue: u16 = 65535;
-    pub const border_red: u16 = 0;
-    pub const border_green: u16 = 0;
-    pub const border_blue: u16 = 0;
+    pub const selection_red: u8 = 117;
+    pub const selection_green: u8 = 136;
+    pub const selection_blue: u8 = 240;
+    pub const window_red: u8 = 255;
+    pub const window_green: u8 = 255;
+    pub const window_blue: u8 = 255;
+    pub const border_red: u8 = 200;
+    pub const border_green: u8 = 200;
+    pub const border_blue: u8 = 200;
+
+    pub fn toX11Color(r: u8, g: u8, b: u8) struct { u16, u16, u16 } {
+        const scale: u16 = 257;
+        return .{ r * scale, g * scale, b * scale };
+    }
 };
 
 pub const desktop = struct {

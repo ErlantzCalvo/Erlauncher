@@ -15,6 +15,7 @@ const X11Backend = struct {
     visual: ?*x11.Visual = null,
     colormap: x11.Colormap = 0,
     gc: ?x11.GC = null,
+    border_pixel: c_ulong = 0,
     running: bool = true,
 
     fn drawCornerArc(app: *X11Backend, drawable: x11.Drawable, gc: x11.GC, width: i32, height: i32, use_lines: bool) void {
@@ -57,7 +58,7 @@ const X11Backend = struct {
 
     fn drawBorder(app: *X11Backend, width: i32, height: i32) void {
         if (app.gc) |gc| {
-            _ = x11.XSetForeground(app.display, gc, x11.XBlackPixel(app.display, x11.XDefaultScreen(app.display)));
+            _ = x11.XSetForeground(app.display, gc, app.border_pixel);
             _ = x11.XSetLineAttributes(app.display, gc, @intCast(config.window.border_width), x11.LineSolid, x11.CapButt, x11.JoinMiter);
 
             _ = x11.XDrawLine(app.display, app.window, gc, config.window.corner_radius, 0, width - config.window.corner_radius - 1, 0);
@@ -83,7 +84,8 @@ const X11Backend = struct {
         var item_color_white: x11.XftColor = undefined;
         _ = x11.XftColorAllocValue(app.display, app.visual, app.colormap, &x11.XRenderColor{ .red = 65535, .green = 65535, .blue = 65535, .alpha = 65535 }, &item_color_white);
 
-        var sel_bg_color = x11.XColor{ .red = config.colors.selection_red, .green = config.colors.selection_green, .blue = config.colors.selection_blue, .flags = 7, .pixel = 0, .pad = 0 };
+        const sel_x11 = config.colors.toX11Color(config.colors.selection_red, config.colors.selection_green, config.colors.selection_blue);
+        var sel_bg_color = x11.XColor{ .red = sel_x11[0], .green = sel_x11[1], .blue = sel_x11[2], .flags = 7, .pixel = 0, .pad = 0 };
         _ = x11.XAllocColor(app.display, app.colormap, &sel_bg_color);
 
         _ = x11.XftDrawString8(app.draw, &text_color, app.font, config.layout.padding_x, @divTrunc(config.ui.input_height, 2), &ui_state.text_buffer[0], @intCast(ui_state.text_len));
@@ -207,7 +209,7 @@ const X11Backend = struct {
 
         const root = x11.XRootWindow(backend_ctx.display, screen_num);
         var x: i32 = @divTrunc(screen_width - width, 2);
-        var y: i32 = @divTrunc(screen_height - height - config.layout.window_height_extra_offset - config.layout.window_height_proximity_factor, 2);
+        var y: i32 = @divTrunc(screen_height - height, 2) - config.layout.window_vertical_offset;
 
         var nmonitors: c_int = 0;
         const monitors = x11.XRRGetMonitors(backend_ctx.display, root, 1, &nmonitors);
@@ -231,7 +233,7 @@ const X11Backend = struct {
                         root_y >= monitor.y and root_y < monitor.y + monitor.height)
                     {
                         x = monitor.x + @divTrunc(monitor.width - width, 2);
-                        y = monitor.y + @divTrunc(monitor.height, 2);
+                        y = monitor.y + @divTrunc(monitor.height, 2) - config.layout.window_vertical_offset;
                         found_monitor = true;
                         break;
                     }
@@ -250,15 +252,24 @@ const X11Backend = struct {
 
                 const monitor = if (primary_monitor_index) |idx| monitors[idx] else monitors[0];
                 x = monitor.x + @divTrunc(monitor.width - width, 2);
-                y = monitor.y + @divTrunc(monitor.height, 2);
+                y = monitor.y + @divTrunc(monitor.height, 2) - config.layout.window_vertical_offset;
             }
         }
 
-        var bg_color = x11.XColor{ .red = config.colors.window_red, .green = config.colors.window_green, .blue = config.colors.window_blue, .flags = 7, .pixel = 0, .pad = 0 };
-        _ = x11.XAllocColor(backend_ctx.display, backend_ctx.colormap, &bg_color);
+        const bg_x11 = config.colors.toX11Color(config.colors.window_red, config.colors.window_green, config.colors.window_blue);
+        var bg_color = x11.XColor{ .red = bg_x11[0], .green = bg_x11[1], .blue = bg_x11[2], .flags = 7, .pixel = 0, .pad = 0 };
+        if (x11.XAllocColor(backend_ctx.display, backend_ctx.colormap, &bg_color) == 0) {
+            std.debug.print("Warning: Failed to allocate window background color\n", .{});
+        }
 
-        var border_color = x11.XColor{ .red = config.colors.border_red, .green = config.colors.border_green, .blue = config.colors.border_blue, .flags = 7, .pixel = 0, .pad = 0 };
-        _ = x11.XAllocColor(backend_ctx.display, backend_ctx.colormap, &border_color);
+        const border_x11 = config.colors.toX11Color(config.colors.border_red, config.colors.border_green, config.colors.border_blue);
+        var border_color = x11.XColor{ .red = border_x11[0], .green = border_x11[1], .blue = border_x11[2], .flags = 7, .pixel = 0, .pad = 0 };
+        if (x11.XAllocColor(backend_ctx.display, backend_ctx.colormap, &border_color) == 0) {
+            std.debug.print("Warning: Failed to allocate border color, using black\n", .{});
+            backend_ctx.border_pixel = x11.XBlackPixel(backend_ctx.display, screen_num);
+        } else {
+            backend_ctx.border_pixel = border_color.pixel;
+        }
 
         var window_attrs: x11.XSetWindowAttributes = undefined;
         window_attrs.background_pixel = bg_color.pixel;
@@ -285,6 +296,9 @@ const X11Backend = struct {
             std.debug.print("Failed to create X11 window\n", .{});
             return error.WindowCreationFailed;
         }
+
+        std.debug.print("Window positioning: x={}, y={} (offset={})\n", .{ x, y, config.layout.window_vertical_offset });
+        std.debug.print("Window created with bg_color.pixel={}, border_pixel={}\n", .{ bg_color.pixel, backend_ctx.border_pixel });
         defer {
             _ = x11.XUnmapWindow(backend_ctx.display, backend_ctx.window);
             _ = x11.XDestroyWindow(backend_ctx.display, backend_ctx.window);
