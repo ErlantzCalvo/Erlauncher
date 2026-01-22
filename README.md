@@ -60,7 +60,7 @@ sudo pacman -S libx11 libxext libxrandr libxft fontconfig freetype2
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/erlauncher.git
+git clone https://github.com/ErlantzCalvo/erlauncher.git
 cd erlauncher
 
 # Build the project
