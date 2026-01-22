@@ -1,22 +1,43 @@
 # Erlauncher
 
-A simple application launcher written in Zig that creates a **frameless popup window** on X11 display systems. Search and launch applications from your desktop environment with keyboard navigation.
+<div align="center">
+
+A fast, lightweight application launcher written in Zig for X11 desktop environments.
+
+[![Zig Version](https://img.shields.io/badge/Zig-0.16.0--dev-red)](https://ziglang.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+[Demo Video](#demo) • [Installation](#installation) • [Usage](#usage) • [Key Bindings](#key-bindings)
+
+</div>
+
+## Demo
+
+https://github.com/user-attachments/assets/erlauncher_demo.mp4
 
 ## Features
 
-- **Frameless window** with rounded corners
-- **Keyboard navigation**: Arrow keys to navigate, Enter to launch, Escape to close
-- **Real-time filtering**: Type to filter applications by name
-- **Multi-monitor aware**: Automatically detects which monitor has the mouse cursor and centers there
-- **Application detection**: Loads `.desktop` files from standard system locations
+- **🚀 Lightweight** - Written in Zig, minimal dependencies, fast startup
+- **🎨 Modern UI** - Frameless window with smooth rounded corners
+- **⌨️ Keyboard-First** - Arrow keys to navigate, Enter to launch, Escape to close
+- **🔍 Real-time Filtering** - Instantly filter applications as you type
+- **🖥️ Multi-Monitor Aware** - Detects cursor position and centers on active monitor
+- **📦 Auto-Discovery** - Loads `.desktop` files from standard system locations
+- **🎯 Focus Handling** - Click outside or lose focus to close
 
-## Prerequisites
+## Tested Platforms
 
-Before building this application, you need to install development libraries for X11.
+| Platform | Status |
+|----------|--------|
+| Ubuntu 24.04 | ✅ Tested |
+| X11 | ✅ Supported |
+| GNOME | ✅ Tested |
 
-### Installing Development Libraries
+## Installation
 
-The required development packages depend on your Linux distribution:
+### Prerequisites
+
+Install required development libraries for X11:
 
 #### Debian/Ubuntu
 ```bash
@@ -33,83 +54,39 @@ sudo dnf install libX11-devel libXext-devel libXrandr-devel libXft-devel fontcon
 sudo pacman -S libx11 libxext libxrandr libxft fontconfig freetype2
 ```
 
-## Building
-
-Once you have required dependencies installed, build the project:
+### Building
 
 ```bash
-# If Zig is not in your PATH, use the full path
-~/zig-linux-x86_64-0.16.0/zig build
+# Clone the repository
+git clone https://github.com/yourusername/erlauncher.git
+cd erlauncher
 
-# Or if you've added Zig to your PATH
+# Build the project
 zig build
-```
 
-The built executable will be located at `zig-out/bin/erlauncher`.
-
-## Running
-
-To run the application:
-
-```bash
-# From project directory
-./zig-out/bin/erlauncher
-
-# Or using zig build run
-~/zig-linux-x86_64-0.14.0/zig build run
+# The executable will be at: zig-out/bin/erlauncher
 ```
 
 ## Usage
 
-- **Type**: Start typing to filter applications by name
-- **Arrow Up/Down**: Navigate through filtered list
-- **Enter**: Launch selected application
-- **Escape**: Close the launcher
-- **Click outside**: Clicking outside the window closes it
+### Running
 
-## Window Features
-
-### Centered Window
-- Automatically calculates screen center position
-- Uses XRandR to detect individual monitors
-- Positions window at the cursor's monitor center
-- Works correctly with multi-monitor setups
-
-### Frameless Window
-- Uses `override_redirect` to bypass window manager decorations
-- Sets `_MOTIF_WM_HINTS` to disable decorations
-- Sets `_NET_WM_WINDOW_TYPE_NOTIFICATION` to indicate popup nature
-- No title bar, no minimize/maximize/close buttons
-- Rounded corners using XShape extension
-
-## Display System
-
-The application works with X11 display servers such as:
-- X.Org
-- XWayland (X11 compatibility layer in Wayland)
-- Traditional X11 window managers
-
-To check your current display system type:
 ```bash
-echo $XDG_SESSION_TYPE  # Displays "wayland" or "x11"
+# Run directly
+./zig-out/bin/erlauncher
+
+# Or use zig build run
+zig build run
 ```
 
-## Configuration
+### Setting Up a Keyboard Shortcut (GNOME)
 
-Window settings are defined in `src/config.zig`:
-- Window dimensions: 600x400 pixels
-- Corner radius: 12 pixels
-- Font: DejaVu Sans 14pt
-- Selection color: Blue (#7588F0)
-
-## Setting Keyboard Shortcut
-
-To launch Erlauncher with the Super/Windows key:
+Launch Erlauncher with Super/Windows key:
 
 ```bash
 gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ name "Erlauncher"
-gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command "/home/PATH-TO-ERLAUNCHER/zig-out/bin/erlauncher"
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command "/home/your-path-to/erlauncher/zig-out/bin/erlauncher"
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ binding "Super_L"
 ```
 
@@ -118,11 +95,42 @@ To remove:
 gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "[]"
 ```
 
-Or use GUI: Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts → + → Add shortcut with name "Erlauncher", command full path, and press Super key.
+**GUI Method:** Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts → + → Add with name "Erlauncher", full command path, and press Super key.
+
+## Key Bindings
+
+| Key | Action |
+|-----|--------|
+| `Type` | Filter applications by name |
+| `Arrow Up` | Navigate up in filtered list |
+| `Arrow Down` | Navigate down in filtered list |
+| `Enter` | Launch selected application |
+| `Escape` | Close launcher |
+| `Click outside` | Click outside window closes it |
+
+## Configuration
+
+Window settings are defined in `src/config.zig`:
+
+```zig
+// Window dimensions
+window.width: 600
+window.height: 400
+window.corner_radius: 12
+
+// UI settings
+ui.input_height: 50
+ui.item_height: 28
+ui.max_visible_items: 10
+
+// Font
+font.name: "DejaVu Sans-14"
+
+// Colors
+colors.selection: #7588F0
+```
 
 ## Architecture
-
-The project is structured with clear separation of concerns:
 
 ```
 src/
@@ -140,9 +148,41 @@ src/
     └── c_bindings.zig    # X11 C bindings
 ```
 
-## Notes
+## Technical Details
 
-- Window appears centered on the active monitor (using XRandR)
-- Application loads from standard desktop entry directories
-- Press Escape or click outside to close
-- Works best with systems having `.desktop` files installed
+### Window Features
+
+- **Centered Window**: Calculates screen center using XRandR to detect individual monitors
+- **Frameless**: Uses `override_redirect` and `_MOTIF_WM_HINTS` for window decoration bypass
+- **Rounded Corners**: Smooth corners implemented via XShape extension
+- **Multi-Monitor**: Positions window at cursor's monitor center for optimal UX
+
+### Display System Support
+
+Works with X11-based display servers:
+
+- ✅ X.Org
+- ✅ XWayland (X11 compatibility layer in Wayland)
+- ✅ Traditional X11 window managers
+
+Check your display system:
+```bash
+echo $XDG_SESSION_TYPE  # Displays "wayland" or "x11"
+```
+
+### Application Loading
+
+Scans standard desktop entry directories:
+- `~/.local/share/applications`
+- `/usr/share/applications`
+- `/usr/local/share/applications`
+- `/var/lib/flatpak/exports/share/applications`
+- `/var/lib/snapd/desktop/applications`
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
