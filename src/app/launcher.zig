@@ -62,7 +62,7 @@ pub fn launchApplication(allocator: std.mem.Allocator, exec_cmd: []const u8) !vo
     const pid = x11.fork();
     if (pid < 0) {
         std.debug.print("Fork failed\n", .{});
-        return;
+        return error.ForkFailed;
     }
 
     if (pid == 0) {
